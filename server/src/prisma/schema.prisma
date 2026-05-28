@@ -1,0 +1,251 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model bugs {
+  id                            Int           @id @default(autoincrement())
+  title                         String        @db.VarChar(200)
+  description                   String?
+  severity                      bug_severity? @default(LOW)
+  status                        bug_status?   @default(OPEN)
+  screenshot                    String?
+  project_id                    Int?
+  reported_by                   Int?
+  assigned_to                   Int?
+  created_at                    DateTime?     @default(now()) @db.Timestamp(6)
+  users_bugs_assigned_toTousers users?        @relation("bugs_assigned_toTousers", fields: [assigned_to], references: [id], onUpdate: NoAction)
+  projects                      projects?     @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_bugs_reported_byTousers users?        @relation("bugs_reported_byTousers", fields: [reported_by], references: [id], onUpdate: NoAction)
+  comments                      comments[]
+}
+
+model comments {
+  id          Int        @id @default(autoincrement())
+  content     String
+  user_id     Int?
+  task_id     Int?
+  bug_id      Int?
+  incident_id Int?
+  created_at  DateTime?  @default(now()) @db.Timestamp(6)
+  bugs        bugs?      @relation(fields: [bug_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  incidents   incidents? @relation(fields: [incident_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tasks       tasks?     @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users       users?     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model incidents {
+  id             Int                @id @default(autoincrement())
+  title          String             @db.VarChar(200)
+  description    String?
+  status         incident_status?   @default(OPEN)
+  severity       incident_severity? @default(MEDIUM)
+  impact         String?
+  root_cause     String?
+  recovery_steps String?
+  project_id     Int?
+  created_by     Int?
+  created_at     DateTime?          @default(now()) @db.Timestamp(6)
+  comments       comments[]
+  users          users?             @relation(fields: [created_by], references: [id], onUpdate: NoAction)
+  projects       projects?          @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model notifications {
+  id         Int                @id @default(autoincrement())
+  message    String
+  type       notification_type?
+  user_id    Int?
+  is_read    Boolean?           @default(false)
+  created_at DateTime?          @default(now()) @db.Timestamp(6)
+  users      users?             @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model project_members {
+  id         Int       @id @default(autoincrement())
+  project_id Int?
+  user_id    Int?
+  joined_at  DateTime? @default(now()) @db.Timestamp(6)
+  projects   projects? @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([project_id, user_id])
+}
+
+model projects {
+  id              Int               @id @default(autoincrement())
+  title           String            @db.VarChar(200)
+  description     String?
+  status          project_status?   @default(PLANNING)
+  start_date      DateTime?         @db.Date
+  end_date        DateTime?         @db.Date
+  created_by      Int?
+  created_at      DateTime?         @default(now()) @db.Timestamp(6)
+  bugs            bugs[]
+  incidents       incidents[]
+  project_members project_members[]
+  users           users?            @relation(fields: [created_by], references: [id], onUpdate: NoAction)
+  sprints         sprints[]
+  tasks           tasks[]
+}
+
+model sprints {
+  id         Int            @id @default(autoincrement())
+  name       String         @db.VarChar(100)
+  goal       String?
+  status     sprint_status? @default(PLANNED)
+  start_date DateTime?      @db.Date
+  end_date   DateTime?      @db.Date
+  project_id Int?
+  created_at DateTime?      @default(now()) @db.Timestamp(6)
+  projects   projects?      @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tasks      tasks[]
+}
+
+model tasks {
+  id                             Int             @id @default(autoincrement())
+  title                          String          @db.VarChar(200)
+  description                    String?
+  status                         task_status?    @default(TODO)
+  priority                       priority_level? @default(MEDIUM)
+  due_date                       DateTime?       @db.Date
+  story_points                   Int?
+  estimated_hours                Int?
+  actual_hours                   Int?
+  sprint_id                      Int?
+  project_id                     Int?
+  assigned_to                    Int?
+  created_by                     Int?
+  created_at                     DateTime?       @default(now()) @db.Timestamp(6)
+  comments                       comments[]
+  users_tasks_assigned_toTousers users?          @relation("tasks_assigned_toTousers", fields: [assigned_to], references: [id], onUpdate: NoAction)
+  users_tasks_created_byTousers  users?          @relation("tasks_created_byTousers", fields: [created_by], references: [id], onUpdate: NoAction)
+  projects                       projects?       @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sprints                        sprints?        @relation(fields: [sprint_id], references: [id], onUpdate: NoAction)
+}
+
+model teams {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique @db.VarChar(100)
+  description String?
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  users       users[]
+}
+
+model users {
+  id                             Int                  @id @default(autoincrement())
+  full_name                      String               @db.VarChar(100)
+  email                          String               @unique @db.VarChar(150)
+  password_hash                  String
+  role                           user_role
+  designation                    String?              @db.VarChar(100)
+  skills                         String?
+  availability                   availability_status? @default(AVAILABLE)
+  avatar                         String?
+  team_id                        Int?
+  created_at                     DateTime?            @default(now()) @db.Timestamp(6)
+  updated_at                     DateTime?            @default(now()) @db.Timestamp(6)
+  bugs_bugs_assigned_toTousers   bugs[]               @relation("bugs_assigned_toTousers")
+  bugs_bugs_reported_byTousers   bugs[]               @relation("bugs_reported_byTousers")
+  comments                       comments[]
+  incidents                      incidents[]
+  notifications                  notifications[]
+  project_members                project_members[]
+  projects                       projects[]
+  tasks_tasks_assigned_toTousers tasks[]              @relation("tasks_assigned_toTousers")
+  tasks_tasks_created_byTousers  tasks[]              @relation("tasks_created_byTousers")
+  teams                          teams?               @relation(fields: [team_id], references: [id], onUpdate: NoAction)
+}
+
+enum activity_type {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  STATUS_CHANGE
+  ASSIGNMENT
+}
+
+enum availability_status {
+  AVAILABLE
+  BUSY
+  IN_MEETING
+  ON_LEAVE
+}
+
+enum bug_severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum bug_status {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  REOPENED
+}
+
+enum incident_severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum incident_status {
+  OPEN
+  INVESTIGATING
+  IDENTIFIED
+  MONITORING
+  RESOLVED
+}
+
+enum notification_type {
+  TASK_ASSIGNED
+  BUG_REPORTED
+  INCIDENT_CREATED
+  COMMENT_ADDED
+  PROJECT_UPDATED
+}
+
+enum priority_level {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum project_status {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum sprint_status {
+  PLANNED
+  ACTIVE
+  COMPLETED
+}
+
+enum task_status {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+  BLOCKED
+}
+
+enum user_role {
+  ADMIN
+  MANAGER
+  DEVELOPER
+  QA
+}
