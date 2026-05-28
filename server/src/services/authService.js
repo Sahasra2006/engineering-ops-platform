@@ -6,8 +6,7 @@ const { sanitizeUser } = require('../utils/sanitize');
 const { logActivity } = require('./activityLogService');
 
 const revokedRefreshTokens = new Set();
-const DEMO_EMAILS = new Set(['admin@gmail.com', 'manager@gmail.com', 'sahasra@gmail.com', 'priya@gmail.com', 'sneha@gmail.com']);
-const DEMO_PASSWORD = '123456';
+const { DEMO_EMAILS, getDemoPassword } = require('../config/demoCredentials');
 
 const buildAccessToken = (user) =>
     jwt.sign(
@@ -77,10 +76,13 @@ const login = async ({ email, password }) => {
         throw new ApiError(401, 'Invalid credentials');
     }
 
+    const normalizedEmail = String(email).toLowerCase();
+    const expectedDemoPassword = getDemoPassword(normalizedEmail);
+
     let isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch && DEMO_EMAILS.has(String(email).toLowerCase()) && password === DEMO_PASSWORD) {
-        // Demo self-heal: support a consistent shared demo password and persist hash.
-        const freshHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+    if (!isMatch && DEMO_EMAILS.has(normalizedEmail) && password === expectedDemoPassword) {
+        // Demo self-heal: accept configured demo password and persist bcrypt hash.
+        const freshHash = await bcrypt.hash(expectedDemoPassword, 10);
         await prisma.users.update({
             where: { id: user.id },
             data: { password_hash: freshHash }

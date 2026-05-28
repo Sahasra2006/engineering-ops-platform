@@ -5,6 +5,7 @@ import { Input } from '../components/Input'
 import { Button } from '../components/Button'
 import { Logo } from '../components/Logo'
 import { useAuth } from '../context/AuthContext'
+import { demoAccounts, getDemoPassword } from '../config/demoCredentials'
 
 export function LoginPage() {
   const { login, loading } = useAuth()
@@ -12,13 +13,6 @@ export function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const demoAccounts = [
-    { role: 'Admin', email: 'admin@gmail.com' },
-    { role: 'Manager', email: 'manager@gmail.com' },
-    { role: 'Developer', email: 'sahasra@gmail.com' },
-    { role: 'Developer', email: 'priya@gmail.com' },
-    { role: 'QA', email: 'sneha@gmail.com' },
-  ]
 
   const onSubmit = async (e) => {
     e.preventDefault()
@@ -32,7 +26,7 @@ export function LoginPage() {
   }
 
   const useDemo = (email) => {
-    setForm({ email, password: '123456' })
+    setForm({ email, password: getDemoPassword(email) })
     setError('')
   }
 
@@ -64,7 +58,7 @@ export function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={form.password}
                   onChange={(e) => setForm((s) => ({ ...s, password: e.target.value }))}
-                  placeholder="••••••••"
+                  placeholder="Enter your password"
                   required
                   className="w-full rounded-md border border-slate-200 bg-white py-2 pl-3 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
