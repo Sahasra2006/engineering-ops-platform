@@ -210,8 +210,3 @@ PostgreSQL Database (Neon)
 
 B.Tech Computer Science Engineering
 
----
-
-## ⭐ Support
-
-If you found this project useful, please consider giving the repository a star.
