@@ -16,6 +16,7 @@ const commentRoutes = require('./routes/commentRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const app = express();
+app.set('trust proxy', 1);
 
 app.use(helmet());
 app.use(
